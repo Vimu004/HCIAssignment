@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-950 px-6 py-10 flex items-center justify-center">
+  <div class="w-full max-w-2xl bg-white dark:bg-gray-900 p-8 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">🧪 User Testing Feedback</h2>
+
+    <form action="{{ url_for('testing_bp.submit_feedback') }}" method="POST" class="space-y-6">
+      <div>
+        <label class="block text-sm text-gray-700 dark:text-gray-300">Your Name (optional)</label>
+        <input type="text" name="name" class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white" />
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-700 dark:text-gray-300">Email (optional)</label>
+        <input type="email" name="email" class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white" />
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-700 dark:text-gray-300">Rate Your Experience (1 = Poor, 5 = Excellent)</label>
+        <input type="range" name="rating" min="1" max="5" value="3" class="w-full" />
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-700 dark:text-gray-300">What did you like most?</label>
+        <textarea name="liked" rows="3" required
+                  class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-700 dark:text-gray-300">Any suggestions for improvement?</label>
+        <textarea name="suggestions" rows="3"
+                  class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"></textarea>
+      </div>
+
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded">
+        Submit Feedback
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

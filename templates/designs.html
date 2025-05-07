@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen px-6 py-10 bg-gray-50 dark:bg-gray-950">
+  <h2 class="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-white">My Saved Designs</h2>
+
+  {% if designs %}
+  <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+    {% for d in designs %}
+    <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4 flex flex-col justify-between"
+         title="Design ID: {{ d.id }}">
+      <div>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">{{ d.design_name }}</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Saved: {{ d.created_at[:10] }} @ {{ d.created_at[11:16] }}
+        </p>
+      </div>
+      <button onclick="loadDesign('{{ d.id }}')"
+              class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition">
+        🔁 Load into Studio
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-center text-gray-600 dark:text-gray-400 mt-10">You haven't saved any designs yet.</p>
+  {% endif %}
+</div>
+
+<script>
+  async function loadDesign(designId) {
+    try {
+      const res = await fetch(`/designs/load/${designId}`);
+      const data = await res.json();
+
+      if (data && typeof window.loadDesign === 'function') {
+        window.loadDesign(data);
+        alert(`✅ Design "${data.design_name}" loaded into Studio.`);
+      } else {
+        throw new Error("Design not formatted correctly.");
+      }
+    } catch (err) {
+      alert("❌ Failed to load design. Try again.");
+      console.error(err);
+    }
+  }
+</script>
+{% endblock %}

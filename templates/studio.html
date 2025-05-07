@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex flex-col md:flex-row h-screen overflow-hidden">
+  <!-- Sidebar Panel -->
+  <aside class="w-full md:w-1/4 bg-white dark:bg-gray-900 p-6 space-y-6 overflow-y-auto shadow-md z-10">
+    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Studio Controls</h2>
+
+    <!-- Room Settings -->
+    <div class="space-y-4">
+      <label class="block text-sm text-gray-600 dark:text-gray-300">Wall Color</label>
+      <input type="color" id="wallColor" value="#dddddd" class="w-full h-10 rounded border" />
+
+      <label class="block text-sm text-gray-600 dark:text-gray-300">Floor Color</label>
+      <input type="color" id="floorColor" value="#eeeeee" class="w-full h-10 rounded border" />
+
+      <label class="block text-sm text-gray-600 dark:text-gray-300">Ceiling Color</label>
+      <input type="color" id="ceilingColor" value="#ffffff" class="w-full h-10 rounded border" />
+
+      <label class="block text-sm text-gray-600 dark:text-gray-300">Floor Material</label>
+      <select id="floorMaterial" class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded text-gray-900 dark:text-white">
+        <option value="wood">Wood</option>
+        <option value="tile">Tile</option>
+        <option value="marble">Marble</option>
+      </select>
+
+      <label class="block text-sm text-gray-600 dark:text-gray-300">Room Width: <span id="roomWidthValue">10</span> m</label>
+      <input type="range" id="roomWidth" min="1" max="20" value="10" class="w-full" oninput="document.getElementById('roomWidthValue').textContent = this.value" />
+
+      <label class="block text-sm text-gray-600 dark:text-gray-300">Room Length: <span id="roomLengthValue">10</span> m</label>
+      <input type="range" id="roomLength" min="1" max="20" value="10" class="w-full" oninput="document.getElementById('roomLengthValue').textContent = this.value" />
+
+      <label class="block text-sm text-gray-600 dark:text-gray-300">Lighting Intensity: <span id="lightIntensityValue">1.0</span></label>
+      <input type="range" id="lightIntensity" min="0" max="10" step="0.1" value="1" class="w-full" oninput="document.getElementById('lightIntensityValue').textContent = this.value" />
+
+      <button id="resetRoomBtn"
+              class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded mt-4">
+        Reset Room
+      </button>
+    </div>
+
+    <!-- Catalog Button -->
+    <div class="mt-6">
+      <h3 class="text-md font-semibold text-gray-800 dark:text-gray-200 mb-2">Add Furniture</h3>
+      <a href="{{ url_for('furniture_bp.catalog_selector') }}">
+        <button
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow">
+          🛋 Add Furniture
+        </button>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Viewer -->
+  <main class="flex-1 min-w-0 relative h-screen overflow-hidden bg-gray-200 dark:bg-gray-800">
+    <!-- Fullscreen 3D canvas -->
+    <canvas id="studioCanvas" class="w-full h-full block"></canvas>
+
+    <!-- Controls on top right -->
+    <div class="absolute top-4 right-4 z-10 flex flex-col gap-3">
+      <a href="{{ url_for('checkout_bp.checkout') }}">
+        <button
+          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">
+          Proceed to Checkout
+        </button>
+      </a>
+      <button id="saveDesignBtn"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
+        💾 Save Design
+      </button>
+      <button id="deleteModelBtn"
+              class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow">
+        🗑 Delete Selected
+      </button>
+      <button id="exportScreenshotBtn"
+              class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow">
+        📸 Export Screenshot
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- Viewer Logic -->
+<script type="module" src="{{ url_for('static', filename='js/assets/main-CEzbqEny.js') }}"></script>
+
+<script>
+  const widthSlider = document.getElementById("roomWidth");
+  const lengthSlider = document.getElementById("roomLength");
+  const lightSlider = document.getElementById("lightIntensity");
+
+  const widthValue = document.getElementById("roomWidthValue");
+  const lengthValue = document.getElementById("roomLengthValue");
+  const lightValue = document.getElementById("lightIntensityValue");
+
+  function syncSliders() {
+    widthValue.textContent = widthSlider.value;
+    lengthValue.textContent = lengthSlider.value;
+    lightValue.textContent = parseFloat(lightSlider.value).toFixed(1);
+  }
+
+  // Initial sync on load
+  document.addEventListener("DOMContentLoaded", syncSliders);
+
+  // Sync on input change
+  widthSlider.addEventListener("input", () => {
+    widthValue.textContent = widthSlider.value;
+  });
+  lengthSlider.addEventListener("input", () => {
+    lengthValue.textContent = lengthSlider.value;
+  });
+  lightSlider.addEventListener("input", () => {
+    lightValue.textContent = parseFloat(lightSlider.value).toFixed(1);
+  });
+</script>
+
+{% endblock %}

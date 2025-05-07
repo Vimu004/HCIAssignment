@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen px-6 py-10 bg-gray-100 dark:bg-gray-950">
+  <div class="max-w-5xl mx-auto">
+    <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
+      🛋 Select Furniture to Add to Your Studio
+    </h2>
+
+    <div id="catalogContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {% for item in catalog %}
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-lg shadow hover:shadow-lg transition flex flex-col justify-between">
+        <div>
+          <img src="{{ item.image }}" alt="{{ item.name }}"
+               class="w-full h-48 object-cover rounded mb-3 border border-gray-300 dark:border-gray-700" />
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white">{{ item.name }}</h3>
+        </div>
+        <button class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded"
+                onclick="addFurniture('{{ item.id }}', '{{ item.image }}')">
+          ➕ Add to Room
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="mt-10 text-center">
+      <a href="{{ url_for('studio_bp.studio') }}"
+         class="text-blue-600 hover:text-blue-800 font-medium">← Back to Studio</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function addFurniture(itemId, imagePath) {
+    const res = await fetch("/furniture/load_model", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: itemId, image_path: imagePath })
+    });
+
+    const result = await res.json();
+    if (result.glb_path) {
+      // Pass the path into localStorage so viewer.js can pick it up
+      localStorage.setItem("newFurnitureModel", result.glb_path);
+      alert("Furniture model added! Returning to studio...");
+      window.location.href = "/studio";
+    } else {
+      alert("Failed to load or generate model.");
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen px-4 py-10 flex justify-center bg-gray-50 dark:bg-gray-950">
+  <div class="w-full max-w-2xl bg-white dark:bg-gray-900 shadow rounded-lg p-8">
+    <h2 class="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">Checkout</h2>
+
+    {% if item %}
+      <div class="flex items-center gap-6 mb-6">
+        <img src="{{ item.image }}" alt="{{ item.name }}" class="w-32 h-32 object-cover rounded shadow" />
+        <div>
+          <h3 class="text-xl font-semibold text-gray-800 dark:text-white">{{ item.name }}</h3>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">Model will be delivered instantly (mock).</p>
+        </div>
+      </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('checkout_bp.confirm') }}" class="grid gap-4">
+      <input type="hidden" name="item_id" value="{{ item.id }}" />
+
+      <label class="text-gray-700 dark:text-gray-300 font-medium">Full Name</label>
+      <input type="text" name="name" value="{{ buyer_name }}" readonly
+             class="px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700" />
+
+      <label class="text-gray-700 dark:text-gray-300 font-medium">Payment Method</label>
+      <select name="payment_method"
+              class="px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700">
+        <option value="credit">Credit Card</option>
+        <option value="paypal">PayPal</option>
+        <option value="crypto">Crypto</option>
+      </select>
+
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold">
+        Confirm Purchase
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

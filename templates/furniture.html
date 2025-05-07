@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen px-6 py-10 bg-gray-50 dark:bg-gray-950">
+  <h2 class="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-white">Furniture Catalog</h2>
+
+  <!-- Upload Section -->
+  <div class="max-w-xl mx-auto mb-10 bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
+    <form action="{{ url_for('furniture_bp.upload_furniture') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Upload New Furniture</h3>
+      <input type="text" name="name" placeholder="Furniture Name" required
+             class="w-full px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white" />
+      <input type="file" name="image" accept="image/*" required
+             class="w-full text-gray-700 dark:text-gray-300" />
+      <button type="submit"
+              class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition">
+        Upload Furniture
+      </button>
+    </form>
+  </div>
+
+  <!-- Catalog Grid -->
+  <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+    {% for item in catalog %}
+    <div class="bg-white dark:bg-gray-900 shadow rounded-lg overflow-hidden transition hover:shadow-lg">
+      <img src="{{ item.image }}" alt="{{ item.name }}" class="w-full h-48 object-cover" />
+      <div class="p-4 flex flex-col items-center text-center">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ item.name }}</h3>
+        <div class="flex gap-2 mt-3">
+          <button onclick="addToStudio('{{ item.id }}', '{{ item.image }}')"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm">
+            ➕ Add to Studio
+          </button>
+          <a href="{{ url_for('checkout_bp.checkout') }}?item_id={{ item.id }}"
+             class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded text-sm">
+            🛒 Buy Now
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  async function addToStudio(id, imagePath) {
+    const response = await fetch("/furniture/load_model", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, image_path: imagePath })
+    });
+
+    const result = await response.json();
+    if (result.glb_path) {
+      if (typeof window.loadFurnitureModel === 'function') {
+        window.loadFurnitureModel(result.glb_path);
+      } else {
+        alert("Viewer not initialized.");
+      }
+    } else {
+      alert("Model generation failed.");
+    }
+  }
+</script>
+{% endblock %}

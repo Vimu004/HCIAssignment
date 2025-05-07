@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" class="{% if session.get('theme') == 'light' %}light{% else %}dark{% endif %} h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FurniFlow Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: "class" };
+  </script>
+  <style>
+    html.dark { background-color: #0f172a; color-scheme: dark; }
+    html.light { background-color: #ffffff; color-scheme: light; }
+
+    .nav-link {
+      @apply px-5 py-2 font-bold text-base transition duration-200 rounded-lg;
+    }
+
+    .nav-link:hover {
+      @apply bg-gray-100 dark:bg-gray-800;
+    }
+
+    .toggle-track {
+      transition: background-color 0.3s ease;
+    }
+
+    .toggle-thumb {
+      transition: transform 0.3s ease;
+    }
+
+    .light .toggle-thumb {
+      transform: translateX(1.5rem);
+    }
+
+    .dark .toggle-thumb {
+      transform: translateX(0);
+    }
+
+    .icon-swap {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .light .icon-sun {
+      opacity: 1;
+      transform: rotate(0deg);
+    }
+
+    .light .icon-moon {
+      opacity: 0;
+      transform: rotate(90deg);
+    }
+
+    .dark .icon-sun {
+      opacity: 0;
+      transform: rotate(-90deg);
+    }
+
+    .dark .icon-moon {
+      opacity: 1;
+      transform: rotate(0deg);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col transition duration-300 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+
+  <!-- NAVBAR -->
+  <nav class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+
+      <!-- Logo -->
+      <a href="{{ url_for('home_bp.home') }}" class="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        FurniFlow Studio
+      </a>
+
+      <!-- Centered Tabs -->
+      <div class="flex-1 flex justify-center space-x-6">
+        {% if session.get('username') %}
+          <a href="{{ url_for('home_bp.home') }}" class="nav-link">Home</a>
+          <a href="{{ url_for('studio_bp.studio') }}" class="nav-link">Studio</a>
+          <a href="{{ url_for('furniture_bp.catalog') }}" class="nav-link">Furniture</a>
+          <a href="{{ url_for('designs_bp.designs') }}" class="nav-link">My Designs</a>
+          <a href="{{ url_for('profile_bp.profile') }}" class="nav-link">Profile</a>
+          <a href="{{ url_for('testing_bp.show_form') }}" class="nav-link">Testing</a>
+          <a href="{{ url_for('auth_bp.logout') }}" class="nav-link text-red-500 hover:text-red-600">Logout</a>
+        {% else %}
+          <a href="{{ url_for('auth_bp.login') }}" class="nav-link">Login</a>
+          <a href="{{ url_for('auth_bp.register') }}" class="nav-link">Register</a>
+        {% endif %}
+      </div>
+
+      <!-- Theme Toggle Switch -->
+      <button id="themeToggle" class="ml-4 relative flex items-center w-12 h-6 rounded-full bg-gray-300 dark:bg-gray-700 toggle-track">
+        <div class="absolute w-6 h-6 bg-white rounded-full shadow toggle-thumb"></div>
+        <svg class="absolute left-1 w-4 h-4 icon-sun text-yellow-400 icon-swap" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 3a1 1 0 011 1v1a1 1 0 01-2 0V4a1 1 0 011-1zm4.22 1.78a1 1 0 010 1.42l-.7.7a1 1 0 01-1.42-1.42l.7-.7a1 1 0 011.42 0zM17 9a1 1 0 010 2h-1a1 1 0 010-2h1zm-1.78 4.22a1 1 0 00-1.42 0l-.7.7a1 1 0 001.42 1.42l.7-.7a1 1 0 000-1.42zM11 17a1 1 0 10-2 0v1a1 1 0 002 0v-1zm-4.22-1.78a1 1 0 00-1.42 1.42l.7.7a1 1 0 001.42-1.42l-.7-.7zM3 11a1 1 0 100-2H2a1 1 0 100 2h1zm1.78-4.22a1 1 0 011.42-1.42l.7.7a1 1 0 01-1.42 1.42l-.7-.7zM10 6a4 4 0 100 8 4 4 0 000-8z"/>
+        </svg>
+        <svg class="absolute right-1 w-4 h-4 icon-moon text-gray-500 icon-swap" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M17.293 13.293A8 8 0 116.707 2.707a8.001 8.001 0 0010.586 10.586z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- FLASH MESSAGES -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="fixed top-20 right-4 z-50 space-y-2">
+        {% for category, message in messages %}
+          <div class="bg-{{ 'red-500' if category == 'error' else 'green-500' if category == 'success' else 'blue-500' }} text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2">
+            <span>{{ message }}</span>
+            <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200">×</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- MAIN PAGE CONTENT -->
+  <main class="flex-1 w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm py-6 mt-auto border-t border-gray-200 dark:border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        &copy; {{ current_year or 2025 }} FurniFlow Studios. All rights reserved.
+      </p>
+    </div>
+  </footer>
+
+  <!-- THEME TOGGLER -->
+  <script>
+    const toggle = document.getElementById("themeToggle");
+
+    toggle.addEventListener("click", () => {
+      const html = document.documentElement;
+      const isDark = html.classList.contains("dark");
+      const newTheme = isDark ? "light" : "dark";
+
+      html.classList.toggle("dark", newTheme === "dark");
+      html.classList.toggle("light", newTheme === "light");
+
+      fetch("/profile/theme", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme: newTheme }),
+      }).catch(err => console.error("Theme switch failed:", err));
+    });
+
+    // Initial theme from session
+    (() => {
+      const html = document.documentElement;
+      const theme = "{{ session.get('theme') or 'dark' }}";
+      html.classList.add(theme);
+      html.classList.remove(theme === "dark" ? "light" : "dark");
+    })();
+
+    // Auto-dismiss flash messages
+    setTimeout(() => {
+      document.querySelectorAll('[class*="bg-"][class*="-500"]').forEach(el => el.remove());
+    }, 5000);
+  </script>
+</body>
+</html>
