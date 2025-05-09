@@ -6,9 +6,9 @@
     <p class="text-gray-800 dark:text-white text-lg mb-4">Thank you, <strong>{{ buyer }}</strong>.</p>
 
     <div class="text-left text-sm text-gray-700 dark:text-gray-300 mb-4 bg-gray-100 dark:bg-gray-800 rounded p-4">
-      <p><strong>🧾 Order ID:</strong> {{ order_id }}</p>
-      <p><strong>🪪 Buyer Name:</strong> {{ buyer }}</p>
-      <p><strong>🪙 Timestamp:</strong> {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+      <p><strong>Order ID:</strong> {{ order_id }}</p>
+      <p><strong>Buyer Name:</strong> {{ buyer }}</p>
+      <p><strong>Timestamp:</strong> {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
     </div>
 
     {% if item %}

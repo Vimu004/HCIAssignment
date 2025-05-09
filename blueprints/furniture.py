@@ -53,10 +53,9 @@ def upload_furniture():
     image_id = str(uuid.uuid4())
     filename = f"{image_id}.jpg"
 
-    # ✅ Resize image to 1024x1024 using Pillow
+    # ✅ Resize image
     try:
-        img = Image.open(image_file.stream)
-        img = img.convert("RGB")  # Ensure compatibility
+        img = Image.open(image_file.stream).convert("RGB")
         img.thumbnail((1024, 1024))
         buffer = io.BytesIO()
         img.save(buffer, format="JPEG")
@@ -91,13 +90,12 @@ def load_model():
     if not item_id:
         return jsonify({"error": "Missing furniture ID"}), 400
 
-    # Check if already generated
     models = load_json(MODELS_DB)
     model_entry = next((m for m in models if m["image_id"] == item_id), None)
+
     if model_entry:
         return jsonify({"glb_path": f"/{model_entry['model_path']}"})
 
-    # Fetch from Supabase
     response = supabase.table("furniture_metadata").select("*").eq("id", item_id).execute()
     if not response.data:
         return jsonify({"error": "Furniture item not found"}), 404
@@ -106,13 +104,11 @@ def load_model():
     image_url = item["image_url"]
     public_image_url = f"{BUCKET_URL}/{image_url}"
 
-    # Generate .glb using Trellis
     try:
         glb_path = generate_glb_with_trellis(public_image_url)
     except Exception as e:
         return jsonify({"error": f"Trellis failed: {str(e)}"}), 500
 
-    # Save metadata
     new_model = {
         "id": str(uuid.uuid4()),
         "image_id": item_id,

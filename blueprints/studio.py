@@ -1,9 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, session
 
-# === Flask Blueprint ===
 studio_bp = Blueprint("studio_bp", __name__, url_prefix="/studio")
 
-# === Route: Studio Main Page ===
 @studio_bp.route("/", methods=["GET"])
 def studio():
     if not session.get("username"):

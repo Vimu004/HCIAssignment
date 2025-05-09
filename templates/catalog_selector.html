@@ -10,7 +10,7 @@
           <h2 class="text-lg font-semibold text-gray-800 dark:text-white">{{ item.name }}</h2>
           <button onclick="selectFurniture('{{ item.id }}')"
                   class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">
-            ➕ Use in Room
+            Use in Room
           </button>
         </div>
       </div>
@@ -28,10 +28,16 @@
     .then(res => res.json())
     .then(data => {
       if (data.glb_path) {
-        localStorage.setItem("newFurnitureModel", data.glb_path);
-        window.location.href = "/studio";
+        if (window.opener && !window.opener.closed) {
+          window.opener.loadFurnitureModel(data.glb_path);
+          window.close(); 
+        } else {
+          
+          localStorage.setItem("newFurnitureModel", data.glb_path);
+          window.location.href = "/studio";
+        }
       } else {
-        alert("Failed to generate model: " + data.error);
+        alert("Model load failed: " + (data.error || "Unknown error"));
       }
     })
     .catch(err => alert("Error: " + err.message));

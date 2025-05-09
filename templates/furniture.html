@@ -28,11 +28,11 @@
         <div class="flex gap-2 mt-3">
           <button onclick="addToStudio('{{ item.id }}', '{{ item.image }}')"
                   class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm">
-            ➕ Add to Studio
+            Add to Studio
           </button>
           <a href="{{ url_for('checkout_bp.checkout') }}?item_id={{ item.id }}"
              class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded text-sm">
-            🛒 Buy Now
+            Buy Now
           </a>
         </div>
       </div>

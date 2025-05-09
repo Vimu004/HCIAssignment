@@ -1,4 +1,3 @@
-// --- Fully Fixed Code for Model Loading & Camera Distance ---
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -9,25 +8,22 @@ let models = [], selectedModel = null, selectionOutline = null;
 let floorMesh, ceilingMesh, gridHelper, walls = [];
 
 const raycaster = new THREE.Raycaster();
-raycaster.far = 500; // Safe range for interaction distance
+raycaster.far = 50000;
 const pointer = new THREE.Vector2();
 let snapToGrid = false;
 let isDragging = false;
-
-// Store all loaded model paths to load multiple
-let pendingModels = [];
+let roomInitialized = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   init();
-  buildRoom();
+  buildRoom(); 
+  animate();
 
   const newModelPath = localStorage.getItem("newFurnitureModel");
   if (newModelPath) {
-    pendingModels.push(newModelPath);
+    loadFurnitureModel(newModelPath); 
     localStorage.removeItem("newFurnitureModel");
   }
-
-  animate();
 });
 
 function init() {
@@ -89,7 +85,9 @@ function init() {
     const el = document.getElementById(id);
     if (!el) return;
     if (id.includes("Color")) el.oninput = updateColors;
-    else el.oninput = buildRoom;
+    else el.oninput = () => {
+      if (roomInitialized) buildRoom();
+    };
   });
 
   window.addEventListener("resize", () => {
@@ -104,6 +102,8 @@ function init() {
 
   renderer.domElement.addEventListener("pointerdown", onPointerDown);
   renderer.domElement.addEventListener("contextmenu", onRightClick);
+
+  window.loadFurnitureModel = loadFurnitureModel;
 }
 
 function updateColors() {
@@ -138,7 +138,6 @@ function buildRoom() {
   const floorGeo = new THREE.PlaneGeometry(width, length);
   floorMesh = new THREE.Mesh(floorGeo, floorMat);
   floorMesh.rotation.x = -Math.PI / 2;
-  floorMesh.name = "floor";
   scene.add(floorMesh);
 
   const ceilingMat = new THREE.MeshStandardMaterial({ color: document.getElementById("ceilingColor").value });
@@ -172,13 +171,8 @@ function buildRoom() {
   light.intensity = parseFloat(document.getElementById("lightIntensity").value);
   ambient.intensity = light.intensity * 0.4;
 
-  // Load any pending model
-  if (pendingModels.length > 0) {
-    pendingModels.forEach(path => loadFurnitureModel(path));
-    pendingModels = [];
-  }
-
   animateCameraTo(new THREE.Vector3(0, 0, 0), Math.max(width, length));
+  roomInitialized = true;
 }
 
 function animateCameraTo(targetVec, offset = 10) {
@@ -206,6 +200,9 @@ function onRightClick(e) {
 }
 
 function onPointerDown(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
   pointer.x = (e.clientX / renderer.domElement.clientWidth) * 2 - 1;
   pointer.y = -(e.clientY / renderer.domElement.clientHeight) * 2 + 1;
 
@@ -225,6 +222,8 @@ function onPointerDown(e) {
     isDragging = true;
 
     const moveHandler = moveEvent => {
+      moveEvent.preventDefault();
+      moveEvent.stopPropagation();
       pointer.x = (moveEvent.clientX / renderer.domElement.clientWidth) * 2 - 1;
       pointer.y = -(moveEvent.clientY / renderer.domElement.clientHeight) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
@@ -346,7 +345,60 @@ window.loadDesign = function (data) {
 
 function animate() {
   requestAnimationFrame(animate);
-  controls.update();
+  if (!isDragging) {
+    controls.update();
+  }
   if (selectionOutline) selectionOutline.update();
   renderer.render(scene, camera);
 }
+
+window.modelController = {
+  moveForward() {
+    if (selectedModel) {
+      selectedModel.position.z -= 1;
+      updateSelectionOutline();
+    }
+  },
+  moveBackward() {
+    if (selectedModel) {
+      selectedModel.position.z += 1;
+      updateSelectionOutline();
+    }
+  },
+  moveLeft() {
+    if (selectedModel) {
+      selectedModel.position.x -= 1;
+      updateSelectionOutline();
+    }
+  },
+  moveRight() {
+    if (selectedModel) {
+      selectedModel.position.x += 1;
+      updateSelectionOutline();
+    }
+  },
+  moveUp() {
+    if (selectedModel) {
+      selectedModel.position.y += 1;
+      updateSelectionOutline();
+    }
+  },
+  moveDown() {
+    if (selectedModel) {
+      selectedModel.position.y -= 1;
+      updateSelectionOutline();
+    }
+  },
+  rotateLeft() {
+    if (selectedModel) {
+      selectedModel.rotation.y += Math.PI / 8;
+      updateSelectionOutline();
+    }
+  },
+  rotateRight() {
+    if (selectedModel) {
+      selectedModel.rotation.y -= Math.PI / 8;
+      updateSelectionOutline();
+    }
+  }
+};

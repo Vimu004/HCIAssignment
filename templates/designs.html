@@ -16,7 +16,7 @@
       </div>
       <button onclick="loadDesign('{{ d.id }}')"
               class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition">
-        🔁 Load into Studio
+        Load into Studio
       </button>
     </div>
     {% endfor %}
@@ -34,12 +34,12 @@
 
       if (data && typeof window.loadDesign === 'function') {
         window.loadDesign(data);
-        alert(`✅ Design "${data.design_name}" loaded into Studio.`);
+        alert(`Design "${data.design_name}" loaded into Studio.`);
       } else {
         throw new Error("Design not formatted correctly.");
       }
     } catch (err) {
-      alert("❌ Failed to load design. Try again.");
+      alert("Failed to load design. Try again.");
       console.error(err);
     }
   }
