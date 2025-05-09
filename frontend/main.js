@@ -1,30 +1,45 @@
+// --- Fully Fixed Code for Model Loading & Camera Distance ---
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 let scene, camera, renderer, controls;
 let light, ambient;
-let models = [], selectedModel = null, ghostModel = null;
+let models = [], selectedModel = null, selectionOutline = null;
 let floorMesh, ceilingMesh, gridHelper, walls = [];
 
 const raycaster = new THREE.Raycaster();
+raycaster.far = 500; // Safe range for interaction distance
 const pointer = new THREE.Vector2();
 let snapToGrid = false;
+let isDragging = false;
+
+// Store all loaded model paths to load multiple
+let pendingModels = [];
 
 document.addEventListener("DOMContentLoaded", () => {
   init();
+  buildRoom();
+
+  const newModelPath = localStorage.getItem("newFurnitureModel");
+  if (newModelPath) {
+    pendingModels.push(newModelPath);
+    localStorage.removeItem("newFurnitureModel");
+  }
+
   animate();
 });
 
 function init() {
   const canvas = document.getElementById("studioCanvas");
   scene = new THREE.Scene();
+
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(canvas.clientWidth, canvas.clientHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
 
-  camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-  camera.position.set(0, 15, 15);
+  camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 2000);
+  camera.position.set(5, 12, 20);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -41,14 +56,14 @@ function init() {
   gridHelper.material.transparent = true;
   scene.add(gridHelper);
 
-  document.getElementById("resetRoomBtn").onclick = resetRoom;
-  document.getElementById("deleteModelBtn").onclick = () => removeSelected();
+  document.getElementById("resetRoomBtn")?.addEventListener("click", resetRoom);
+  document.getElementById("deleteModelBtn")?.addEventListener("click", () => removeSelected());
   document.getElementById("snapToggleBtn")?.addEventListener("click", () => {
     snapToGrid = !snapToGrid;
     alert("Snap-to-grid: " + (snapToGrid ? "ON" : "OFF"));
   });
 
-  document.getElementById("saveDesignBtn").onclick = async () => {
+  document.getElementById("saveDesignBtn")?.addEventListener("click", async () => {
     const name = prompt("Enter design name:");
     if (!name) return;
     const state = getCurrentRoomState();
@@ -60,15 +75,15 @@ function init() {
     });
     const result = await res.json();
     alert(result.status === "ok" ? "Design saved!" : "Error saving design.");
-  };
+  });
 
-  document.getElementById("exportScreenshotBtn").onclick = () => {
+  document.getElementById("exportScreenshotBtn")?.addEventListener("click", () => {
     renderer.render(scene, camera);
     const link = document.createElement("a");
     link.download = "furni-studio-screenshot.png";
     link.href = renderer.domElement.toDataURL();
     link.click();
-  };
+  });
 
   ["wallColor", "floorColor", "ceilingColor", "roomWidth", "roomLength", "lightIntensity"].forEach(id => {
     const el = document.getElementById(id);
@@ -89,14 +104,6 @@ function init() {
 
   renderer.domElement.addEventListener("pointerdown", onPointerDown);
   renderer.domElement.addEventListener("contextmenu", onRightClick);
-
-  const newModelPath = localStorage.getItem("newFurnitureModel");
-  if (newModelPath) {
-    loadFurnitureModel(newModelPath);
-    localStorage.removeItem("newFurnitureModel");
-  }
-
-  buildRoom();
 }
 
 function updateColors() {
@@ -121,13 +128,17 @@ function resetRoom() {
 function buildRoom() {
   const width = parseFloat(document.getElementById("roomWidth").value);
   const length = parseFloat(document.getElementById("roomLength").value);
-  scene.remove(...[floorMesh, ceilingMesh, ...walls]);
+
+  if (floorMesh) scene.remove(floorMesh);
+  if (ceilingMesh) scene.remove(ceilingMesh);
+  walls.forEach(w => scene.remove(w));
   walls = [];
 
   const floorMat = new THREE.MeshStandardMaterial({ color: document.getElementById("floorColor").value });
   const floorGeo = new THREE.PlaneGeometry(width, length);
   floorMesh = new THREE.Mesh(floorGeo, floorMat);
   floorMesh.rotation.x = -Math.PI / 2;
+  floorMesh.name = "floor";
   scene.add(floorMesh);
 
   const ceilingMat = new THREE.MeshStandardMaterial({ color: document.getElementById("ceilingColor").value });
@@ -160,6 +171,12 @@ function buildRoom() {
 
   light.intensity = parseFloat(document.getElementById("lightIntensity").value);
   ambient.intensity = light.intensity * 0.4;
+
+  // Load any pending model
+  if (pendingModels.length > 0) {
+    pendingModels.forEach(path => loadFurnitureModel(path));
+    pendingModels = [];
+  }
 
   animateCameraTo(new THREE.Vector3(0, 0, 0), Math.max(width, length));
 }
@@ -196,9 +213,16 @@ function onPointerDown(e) {
   const intersects = raycaster.intersectObjects(models, true);
 
   if (intersects.length > 0) {
-    selectedModel = intersects[0].object.parent;
-    controls.enabled = false;
+    selectedModel = intersects[0].object;
+    while (selectedModel.parent && !models.includes(selectedModel)) {
+      selectedModel = selectedModel.parent;
+    }
+
+    updateSelectionOutline();
+
     const offset = intersects[0].point.clone().sub(selectedModel.position);
+    controls.enabled = false;
+    isDragging = true;
 
     const moveHandler = moveEvent => {
       pointer.x = (moveEvent.clientX / renderer.domElement.clientWidth) * 2 - 1;
@@ -211,22 +235,29 @@ function onPointerDown(e) {
           pos.x = Math.round(pos.x);
           pos.z = Math.round(pos.z);
         }
-
-        const bbox = new THREE.Box3().setFromObject(selectedModel);
-        selectedModel.position.set(pos.x, 0, pos.z);
-        const hasCollision = models.some(m => m !== selectedModel && bbox.intersectsBox(new THREE.Box3().setFromObject(m)));
-        if (hasCollision) selectedModel.position.set(0, 0, 0);
+        pos.y = selectedModel.position.y;
+        selectedModel.position.set(pos.x, pos.y, pos.z);
+        updateSelectionOutline();
       }
     };
 
     const upHandler = () => {
-      controls.enabled = true;
       renderer.domElement.removeEventListener("pointermove", moveHandler);
       renderer.domElement.removeEventListener("pointerup", upHandler);
+      controls.enabled = true;
+      isDragging = false;
     };
 
     renderer.domElement.addEventListener("pointermove", moveHandler);
     renderer.domElement.addEventListener("pointerup", upHandler);
+  }
+}
+
+function updateSelectionOutline() {
+  if (selectionOutline) scene.remove(selectionOutline);
+  if (selectedModel) {
+    selectionOutline = new THREE.BoxHelper(selectedModel, 0xffff00);
+    scene.add(selectionOutline);
   }
 }
 
@@ -236,11 +267,21 @@ export function loadFurnitureModel(glbPath) {
     const model = gltf.scene;
     const width = parseFloat(document.getElementById("roomWidth").value);
     const length = parseFloat(document.getElementById("roomLength").value);
-    const scale = Math.min(width, length) / 10;
+    const scaleFactor = Math.min(width, length) / 10 * 2.0;
 
-    model.scale.setScalar(scale);
+    model.scale.setScalar(scaleFactor);
     model.userData.glbPath = glbPath;
-    model.traverse(o => { o.castShadow = true; o.receiveShadow = true; });
+
+    const bbox = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
+    model.position.y = size.y / 2;
+
+    model.traverse(o => {
+      o.castShadow = true;
+      o.receiveShadow = true;
+    });
+
     scene.add(model);
     models.push(model);
   });
@@ -250,6 +291,10 @@ function removeSelected() {
   if (!selectedModel) return;
   scene.remove(selectedModel);
   models = models.filter(m => m !== selectedModel);
+  if (selectionOutline) {
+    scene.remove(selectionOutline);
+    selectionOutline = null;
+  }
   selectedModel = null;
 }
 
@@ -302,5 +347,6 @@ window.loadDesign = function (data) {
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
+  if (selectionOutline) selectionOutline.update();
   renderer.render(scene, camera);
 }
